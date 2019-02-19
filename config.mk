@@ -21,12 +21,12 @@
 # Disabling this will also mean that passwords must be stored in plain text. It
 # is strongly recommended that you only disable WITH_TLS if you are not using
 # password authentication at all.
-WITH_TLS:=yes
+#WITH_TLS:=yes
 
 # Comment out to disable TLS/PSK support in the broker and client. Requires
 # WITH_TLS=yes.
 # This must be disabled if using openssl < 1.0.
-WITH_TLS_PSK:=yes
+#WITH_TLS_PSK:=yes
 
 # Comment out to disable client threading support.
 WITH_THREADING:=yes
@@ -66,7 +66,7 @@ WITH_SRV:=no
 
 # Build using libuuid for clientid generation (Linux only - please report if
 # supported on your platform).
-WITH_UUID:=yes
+#WITH_UUID:=yes
 
 # Build with websockets support on the broker.
 WITH_WEBSOCKETS:=no
@@ -75,7 +75,7 @@ WITH_WEBSOCKETS:=no
 WITH_EC:=yes
 
 # Build man page documentation by default.
-WITH_DOCS:=yes
+#WITH_DOCS:=yes
 
 # Build with client support for SOCK5 proxy.
 WITH_SOCKS:=yes
@@ -84,16 +84,18 @@ WITH_SOCKS:=yes
 WITH_STRIP:=no
 
 # Build static libraries
-WITH_STATIC_LIBRARIES:=no
+WITH_STATIC_LIBRARIES:=yes
 
 # Build shared libraries
-WITH_SHARED_LIBRARIES:=yes
+WITH_SHARED_LIBRARIES:=no
 
 # Build with async dns lookup support for bridges (temporary). Requires glibc.
 #WITH_ADNS:=yes
 
 # Build with epoll support.
-WITH_EPOLL:=yes
+#ifeq (, $(findstring mingw32, $(CROSS_COMPILE)))
+#WITH_EPOLL:=yes
+#endif
 
 # Build with bundled uthash.h
 WITH_BUNDLED_DEPS:=yes
@@ -110,6 +112,14 @@ VERSION=1.5.7
 # Client library SO version. Bump if incompatible API/ABI changes are made.
 SOVERSION=1
 
+SONAME:=
+ifneq (, $(findstring mingw32, $(CROSS_COMPILE)))
+
+else
+
+endif
+
+
 # Man page generation requires xsltproc and docbook-xsl
 XSLTPROC=xsltproc --nonet
 # For html generation
@@ -118,6 +128,9 @@ DB_HTML_XSL=man/html.xsl
 #MANCOUNTRIES=en_GB
 
 UNAME:=$(shell uname -s)
+
+
+LDFLAGS?=
 
 ifeq ($(UNAME),SunOS)
 	ifeq ($(CC),cc)
@@ -129,28 +142,72 @@ else
 	CFLAGS?=-Wall -ggdb -O2
 endif
 
+ifneq (, $(findstring mingw32, $(CROSS_COMPILE)))
+	MINGW_WIN_VERS := -DWINVER=_WIN32_WINNT_WIN7 -D_WIN32_WINNT=0x0601
+	CFLAGS += $(MINGW_WIN_VERS)
+endif
+
+ifeq ($(WITH_STATIC_LIBRARIES),yes)
+	CFLAGS += -DLIBMOSQUITTO_STATIC
+endif
+
 STATIC_LIB_DEPS:=
 LIB_CFLAGS:=${CFLAGS} ${CPPFLAGS} -I. -I.. -I../lib
 LIB_CXXFLAGS:=$(CFLAGS) ${CPPFLAGS} -I. -I.. -I../lib
 LIB_LDFLAGS:=${LDFLAGS}
 
-BROKER_CFLAGS:=${LIB_CFLAGS} ${CPPFLAGS} -DVERSION="\"${VERSION}\"" -DWITH_BROKER
+BROKER_CFLAGS:=${LIB_CFLAGS} ${CPPFLAGS} -DVERSION="\"${VERSION}\"" -DWITH_BROKER 
 CLIENT_CFLAGS:=${CFLAGS} ${CPPFLAGS} -I.. -I../lib -DVERSION="\"${VERSION}\""
+
+ifneq (, $(findstring mingw32, $(CROSS_COMPILE)))
+	LIB_CFLAGS += -Dlibmosquitto_EXPORTS 
+	LIB_CXXFLAGS += -Dmosquittopp_EXPORTS 
+endif
 
 ifneq ($(or $(findstring $(UNAME),FreeBSD), $(findstring $(UNAME),OpenBSD), $(findstring $(UNAME),NetBSD)),)
 	BROKER_LIBS:=-lm
 else
-	BROKER_LIBS:=-ldl -lm
+ifeq (, $(findstring mingw32, $(CROSS_COMPILE)))
+	LDL := -ldl
+endif
+	BROKER_LIBS:=$(LDL) -lm
 endif
 LIB_LIBS:=
 PASSWD_LIBS:=
 
+#mingw not support -lrt
+DYNAMICBASE:=-Wl,--nxcompat -Wl,--dynamicbase
+ifneq (, $(findstring mingw32, $(CROSS_COMPILE)))
+	BROKER_LIBS += $(DYNAMICBASE) 
+	LIB_LIBS +=  $(DYNAMICBASE)
+else
+	LRT:=-lrt
+	BROKER_LIBS += $(LRT)
+	LIB_LIBS += $(LRT) 
+endif
+
 ifeq ($(UNAME),Linux)
-	BROKER_LIBS:=$(BROKER_LIBS) -lrt -Wl,--dynamic-list=linker.syms
-	LIB_LIBS:=$(LIB_LIBS) -lrt
+	BROKER_LIBS += -Wl,--dynamic-list=linker.syms
+endif
+
+#mingw libs
+MINGWS_LIBS:=-lwinmm -ladvapi32 -luuid -lole32 -lws2_32 \
+		  -lgdi32 \
+		   -lwsock32 \
+		  -lversion \
+		  -ldbghelp \
+		  -liphlpapi \
+		  -lcrypt32
+
+ifneq (, $(findstring mingw32, $(CROSS_COMPILE)))
+	BROKER_LIBS += $(MINGWS_LIBS)
+	LIB_LIBS += $(MINGWS_LIBS)
 endif
 
 CLIENT_LDFLAGS:=$(LDFLAGS) -L../lib
+ifneq (, $(findstring mingw32, $(CROSS_COMPILE)))
+	CLIENT_LDFLAGS+=$(DYNAMICBASE) $(MINGWS_LIBS) 
+endif
 ifeq ($(WITH_SHARED_LIBRARIES),yes)
 	CLIENT_LDFLAGS:=${CLIENT_LDFLAGS} ../lib/libmosquitto.so.${SOVERSION}
 endif

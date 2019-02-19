@@ -20,6 +20,10 @@ Contributors:
 
 #include "config.h"
 
+#if defined(__MINGW64__) || defined(__MINGW32__)
+#include <stdint.h>
+#endif
+
 #ifdef WIN32
 #  include <winsock2.h>
 #endif
