@@ -1,0 +1,80 @@
+# Copyright (c) 2018, Gary Huang, deepkh@gmail.com, https://github.com/deepkh
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+SHELL := /bin/bash
+
+include $(MK_RESET)
+################ mk base dir, mk header dir ##########
+TARGET_DLL_BASE_DIR=$(LIBMOSQUITTO_OBJS_DIR)
+TARGET_DLL_HEADER_BASE_DIR=$(RUNTIME_INCLUDE)/$(LIBMOSQUITTO_NAME)
+TARGET_DLL_DIRS= \
+		$(TARGET_DLL_BASE_DIR) \
+		$(TARGET_DLL_HEADER_BASE_DIR)
+TARGET_DLL_DIRS_CLEAN=$(addsuffix _clean,$(TARGET_DLL_DIRS))
+TARGET_DLL_HEADERS=
+TARGET_DLL_HEADERS_CLEAN=$(addsuffix _clean,$(TARGET_DLL_HEADERS))
+
+################ mk lib ##########
+CFLAGS += -I$(LIBMOSQUITTO)/../ -Dlibmosquitto_EXPORTS -fPIC -DWITH_THREADING -DWITH_SOCKS 
+LDFLAGS += -Wl,--version-script=linker.version -lpthread
+TARGET_DLL = $(LIBMOSQUITTO_DLL)
+TARGET_DLL_CLEAN = $(LIBMOSQUITTO_DLL_CLEAN)
+ifneq (, $(findstring mingw, $(PLATFORM)))
+TARGET_DLL_DEF=$(subst $(DLLSUFFIX),$(DEFSUFFIX),$(TARGET_DLL))
+TARGET_DLL_DEF_CLEAN=$(TARGET_DLL_DEF)_clean
+TARGET_DLL_A=$(subst $(DLLSUFFIX),$(DLLASUFFIX),$(TARGET_DLL))
+TARGET_DLL_A_CLEAN=$(TARGET_DLL_A)_clean
+endif
+LIB_C_FILE += mosquitto.c \
+		  actions.c \
+		  callbacks.c \
+		  connect.c \
+		  handle_connack.c \
+		  handle_ping.c \
+		  handle_pubackcomp.c \
+		  handle_publish.c \
+		  handle_pubrec.c \
+		  handle_pubrel.c \
+		  handle_suback.c \
+		  handle_unsuback.c \
+		  helpers.c \
+		  logging_mosq.c \
+		  loop.c \
+		  memory_mosq.c \
+		  messages_mosq.c \
+		  net_mosq.c \
+		  options.c \
+		  packet_mosq.c \
+		  read_handle.c \
+		  send_connect.c \
+		  send_disconnect.c \
+		  send_mosq.c \
+		  send_publish.c \
+		  send_subscribe.c \
+		  send_unsubscribe.c \
+		  socks_mosq.c \
+		  srv_mosq.c \
+		  thread_mosq.c \
+		  time_mosq.c \
+		  tls_mosq.c \
+		  utf8_mosq.c \
+		  util_mosq.c \
+		  will_mosq.c
+
+OBJS_DIR=$(TARGET_DLL_BASE_DIR)
+LIB_C_OBJS = $(addprefix $(OBJS_DIR)/, $(LIB_C_FILE:.c=.o))
+LIB_C_OBJS_CLEAN = $(addsuffix _clean,$(LIB_C_OBJS))
+LIB_CXX_OBJS = $(addprefix $(OBJS_DIR)/, $(LIB_CXX_FILE:.cpp=.o))
+LIB_CXX_OBJS_CLEAN = $(addsuffix _clean,$(LIB_CXX_OBJS))
+include $(MK_DLL)
+

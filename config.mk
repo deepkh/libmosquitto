@@ -84,10 +84,10 @@ WITH_SOCKS:=yes
 WITH_STRIP:=no
 
 # Build static libraries
-WITH_STATIC_LIBRARIES:=yes
+WITH_STATIC_LIBRARIES:=no
 
 # Build shared libraries
-WITH_SHARED_LIBRARIES:=no
+WITH_SHARED_LIBRARIES:=yes
 
 # Build with async dns lookup support for bridges (temporary). Requires glibc.
 #WITH_ADNS:=yes
