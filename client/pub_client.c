@@ -64,9 +64,11 @@ void my_connect_callback(struct mosquitto *mosq, void *obj, int result)
 			case MSGMODE_CMD:
 			case MSGMODE_FILE:
 			case MSGMODE_STDIN_FILE:
+				printf("%s mosquitto_publish FILE or STDIN_FILE \n", __func__);
 				rc = mosquitto_publish(mosq, &mid_sent, topic, msglen, message, qos, retain);
 				break;
 			case MSGMODE_NULL:
+				printf("%s mosquitto_publish NULL \n", __func__);
 				rc = mosquitto_publish(mosq, &mid_sent, topic, 0, NULL, qos, retain);
 				break;
 			case MSGMODE_STDIN_LINE:
@@ -104,6 +106,7 @@ void my_connect_callback(struct mosquitto *mosq, void *obj, int result)
 
 void my_disconnect_callback(struct mosquitto *mosq, void *obj, int rc)
 {
+	printf("%s \n", __func__);
 	connected = false;
 }
 
@@ -112,10 +115,12 @@ void my_publish_callback(struct mosquitto *mosq, void *obj, int mid)
 	last_mid_sent = mid;
 	if(mode == MSGMODE_STDIN_LINE){
 		if(mid == last_mid){
+		printf("%s 1 mosquitto_disconnect\n", __func__);
 			mosquitto_disconnect(mosq);
 			disconnect_sent = true;
 		}
 	}else if(disconnect_sent == false){
+	printf("%s 2 mosquitto_disconnect\n", __func__);
 		mosquitto_disconnect(mosq);
 		disconnect_sent = true;
 	}
@@ -335,6 +340,8 @@ int main(int argc, char *argv[])
 	password = cfg.password;
 	quiet = cfg.quiet;
 
+	printf("cfg.pub_mode: %d\n", cfg.pub_mode);
+
 #ifndef WITH_THREADING
 	if(cfg.pub_mode == MSGMODE_STDIN_LINE){
 		fprintf(stderr, "Error: '-l' mode not available, threading support has not been compiled in.\n");
@@ -371,6 +378,7 @@ int main(int argc, char *argv[])
 		free(buf);
 		return 1;
 	}
+			printf("after client_id_generate\n");
 
 	mosq = mosquitto_new(cfg.id, true, NULL);
 	if(!mosq){
@@ -460,6 +468,7 @@ int main(int argc, char *argv[])
 			rc = MOSQ_ERR_SUCCESS;
 		}else{
 			rc = mosquitto_loop(mosq, -1, 1);
+			printf("\nmosquitto_loop rc:%d %d connected:%d\n", rc, MOSQ_ERR_SUCCESS, connected);
 		}
 	}while(rc == MOSQ_ERR_SUCCESS && connected);
 

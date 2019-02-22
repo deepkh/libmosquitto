@@ -71,11 +71,17 @@ void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquit
 	if(message->retain && cfg->no_retain) return;
 	if(cfg->filter_outs){
 		for(i=0; i<cfg->filter_out_count; i++){
+			printf("%s mosquitto_topic_matches_sub %s %s\n"
+				, __func__
+				, cfg->filter_outs[i]
+				, message->topic
+			);
 			mosquitto_topic_matches_sub(cfg->filter_outs[i], message->topic, &res);
 			if(res) return;
 		}
 	}
 
+	printf("%s 1\n", __func__);
 	print_message(cfg, message);
 
 	if(cfg->msg_count>0){
@@ -97,9 +103,11 @@ void my_connect_callback(struct mosquitto *mosq, void *obj, int result, int flag
 
 	if(!result){
 		for(i=0; i<cfg->topic_count; i++){
+			printf("%s mosquitto_subscribe topics:%s qos:%d\n", __func__, cfg->topics[i], cfg->qos);
 			mosquitto_subscribe(mosq, NULL, cfg->topics[i], cfg->qos);
 		}
 		for(i=0; i<cfg->unsub_topic_count; i++){
+			printf("%s mosquitto_unsubscribe topics:%s \n", __func__, cfg->topics[i]);
 			mosquitto_unsubscribe(mosq, NULL, cfg->unsub_topics[i]);
 		}
 	}else{
@@ -118,6 +126,8 @@ void my_subscribe_callback(struct mosquitto *mosq, void *obj, int mid, int qos_c
 	assert(obj);
 	cfg = (struct mosq_config *)obj;
 
+	printf("%s \n", __func__);
+
 	if(!cfg->quiet) printf("Subscribed (mid: %d): %d", mid, granted_qos[0]);
 	for(i=1; i<qos_count; i++){
 		if(!cfg->quiet) printf(", %d", granted_qos[i]);
@@ -127,7 +137,7 @@ void my_subscribe_callback(struct mosquitto *mosq, void *obj, int mid, int qos_c
 
 void my_log_callback(struct mosquitto *mosq, void *obj, int level, const char *str)
 {
-	printf("%s\n", str);
+	printf("%s %s\n", __func__, str);
 }
 
 void print_usage(void)
@@ -305,7 +315,9 @@ int main(int argc, char *argv[])
 	}
 #endif
 
+	printf("mosquitto_loop_forever 1\n");
 	rc = mosquitto_loop_forever(mosq, -1, 1);
+	printf("mosquitto_loop_forever 2\n");
 
 	mosquitto_destroy(mosq);
 	mosquitto_lib_cleanup();

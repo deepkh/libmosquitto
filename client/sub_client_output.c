@@ -308,10 +308,11 @@ static void formatted_print(const struct mosq_config *cfg, const struct mosquitt
 void print_message(struct mosq_config *cfg, const struct mosquitto_message *message)
 {
 	if(cfg->format){
+			printf("%s cfg->format:%s \n", __func__, message->topic);
 		formatted_print(cfg, message);
 	}else if(cfg->verbose){
 		if(message->payloadlen){
-			printf("%s ", message->topic);
+			printf("%s message->payloadlen:%s \n", __func__, message->topic);
 			write_payload(message->payload, message->payloadlen, false);
 			if(cfg->eol){
 				printf("\n");
@@ -324,6 +325,7 @@ void print_message(struct mosq_config *cfg, const struct mosquitto_message *mess
 		fflush(stdout);
 	}else{
 		if(message->payloadlen){
+			printf("%s message->payloadlen\n", __func__);
 			write_payload(message->payload, message->payloadlen, false);
 			if(cfg->eol){
 				printf("\n");

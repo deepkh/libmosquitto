@@ -890,48 +890,82 @@ int client_opts_set(struct mosquitto *mosq, struct mosq_config *cfg)
 	int rc;
 #endif
 
-	if(cfg->will_topic && mosquitto_will_set(mosq, cfg->will_topic,
-				cfg->will_payloadlen, cfg->will_payload, cfg->will_qos,
-				cfg->will_retain)){
+	if (cfg->will_topic) {
+		printf("mosquitto_will_set cfg->will_topic:%s cfg->will_payloadlen:%ld cfg->will_payload:%s cfg->will_qos:%d cfg->will_retain:%d\n"
+			, cfg->will_topic
+			, cfg->will_payloadlen
+			, cfg->will_payload
+			, cfg->will_qos
+			, cfg->will_retain);
 
-		if(!cfg->quiet) fprintf(stderr, "Error: Problem setting will.\n");
-		mosquitto_lib_cleanup();
-		return 1;
+		if(cfg->will_topic && mosquitto_will_set(mosq, cfg->will_topic,
+					cfg->will_payloadlen, cfg->will_payload, cfg->will_qos,
+					cfg->will_retain)){
+
+			if(!cfg->quiet) fprintf(stderr, "Error: Problem setting will.\n");
+			mosquitto_lib_cleanup();
+			return 1;
+		}
 	}
-	if(cfg->username && mosquitto_username_pw_set(mosq, cfg->username, cfg->password)){
-		if(!cfg->quiet) fprintf(stderr, "Error: Problem setting username and password.\n");
-		mosquitto_lib_cleanup();
-		return 1;
+
+	if (cfg->username) {
+		printf("mosquitto_username_pw_set cfg->username:%s cfg->password:%s\n"
+			, cfg->username
+			, cfg->password
+		);
+		if(cfg->username && mosquitto_username_pw_set(mosq, cfg->username, cfg->password)){
+			if(!cfg->quiet) fprintf(stderr, "Error: Problem setting username and password.\n");
+			mosquitto_lib_cleanup();
+			return 1;
+		}
 	}
 #ifdef WITH_TLS
-	if((cfg->cafile || cfg->capath)
-			&& mosquitto_tls_set(mosq, cfg->cafile, cfg->capath, cfg->certfile, cfg->keyfile, NULL)){
+	if (cfg->cafile || cfg->capath) {
+		printf("mosquitto_tls_set: cfg->cafile:%s cfg->capath:%s\n"
+			, cfg->cafile
+			, cfg->capath
+		);
+		if((cfg->cafile || cfg->capath)
+				&& mosquitto_tls_set(mosq, cfg->cafile, cfg->capath, cfg->certfile, cfg->keyfile, NULL)){
 
-		if(!cfg->quiet) fprintf(stderr, "Error: Problem setting TLS options.\n");
-		mosquitto_lib_cleanup();
-		return 1;
+			if(!cfg->quiet) fprintf(stderr, "Error: Problem setting TLS options.\n");
+			mosquitto_lib_cleanup();
+			return 1;
+		}
 	}
-	if(cfg->insecure && mosquitto_tls_insecure_set(mosq, true)){
-		if(!cfg->quiet) fprintf(stderr, "Error: Problem setting TLS insecure option.\n");
-		mosquitto_lib_cleanup();
-		return 1;
+
+	if (cfg->insecure) {
+		printf("mosquitto_tls_insecure_set: true");
+		if(cfg->insecure && mosquitto_tls_insecure_set(mosq, true)){
+			if(!cfg->quiet) fprintf(stderr, "Error: Problem setting TLS insecure option.\n");
+			mosquitto_lib_cleanup();
+			return 1;
+		}
 	}
 #  ifdef FINAL_WITH_TLS_PSK
-	if(cfg->psk && mosquitto_tls_psk_set(mosq, cfg->psk, cfg->psk_identity, NULL)){
-		if(!cfg->quiet) fprintf(stderr, "Error: Problem setting TLS-PSK options.\n");
-		mosquitto_lib_cleanup();
-		return 1;
+	if (cfg->psk) {
+		printf("mosquitto_tls_insecure_set: cfg->psk:%s cfg->psk_identity:%s\n", cfg->psk, cfg->psk_identity);
+		if(cfg->psk && mosquitto_tls_psk_set(mosq, cfg->psk, cfg->psk_identity, NULL)){
+			if(!cfg->quiet) fprintf(stderr, "Error: Problem setting TLS-PSK options.\n");
+			mosquitto_lib_cleanup();
+			return 1;
+		}
 	}
 #  endif
-	if((cfg->tls_version || cfg->ciphers) && mosquitto_tls_opts_set(mosq, 1, cfg->tls_version, cfg->ciphers)){
-		if(!cfg->quiet) fprintf(stderr, "Error: Problem setting TLS options.\n");
-		mosquitto_lib_cleanup();
-		return 1;
+	if((cfg->tls_version || cfg->ciphers)) {
+		printf("mosquitto_tls_opts_set: cfg->tls_version:%s cfg->ciphers:%s\n", cfg->tls_version, cfg->ciphers);
+		if((cfg->tls_version || cfg->ciphers) && mosquitto_tls_opts_set(mosq, 1, cfg->tls_version, cfg->ciphers)){
+			if(!cfg->quiet) fprintf(stderr, "Error: Problem setting TLS options.\n");
+			mosquitto_lib_cleanup();
+			return 1;
+		}
 	}
 #endif
+	printf("mosquitto_max_inflight_messages_set: %u\n", cfg->max_inflight);
 	mosquitto_max_inflight_messages_set(mosq, cfg->max_inflight);
 #ifdef WITH_SOCKS
 	if(cfg->socks5_host){
+	printf("mosquitto_socks5_set\n");
 		rc = mosquitto_socks5_set(mosq, cfg->socks5_host, cfg->socks5_port, cfg->socks5_username, cfg->socks5_password);
 		if(rc){
 			mosquitto_lib_cleanup();
@@ -939,6 +973,7 @@ int client_opts_set(struct mosquitto *mosq, struct mosq_config *cfg)
 		}
 	}
 #endif
+	printf("mosquitto_opts_set MOSQ_OPT_PROTOCOL_VERSION %d\n", cfg->protocol_version);
 	mosquitto_opts_set(mosq, MOSQ_OPT_PROTOCOL_VERSION, &(cfg->protocol_version));
 	return MOSQ_ERR_SUCCESS;
 }
@@ -956,6 +991,7 @@ int client_id_generate(struct mosq_config *cfg, const char *id_base)
 			return 1;
 		}
 		snprintf(cfg->id, strlen(cfg->id_prefix)+10, "%s%d", cfg->id_prefix, getpid());
+		printf("is cfg->id_prefix:%s", cfg->id);
 	}else if(!cfg->id){
 		hostname[0] = '\0';
 		gethostname(hostname, 256);
@@ -967,11 +1003,13 @@ int client_id_generate(struct mosq_config *cfg, const char *id_base)
 			mosquitto_lib_cleanup();
 			return 1;
 		}
-		snprintf(cfg->id, len, "%s|%d-%s", id_base, getpid(), hostname);
+		//snprintf(cfg->id, len, "%s|%d-%s", id_base, getpid(), hostname);
+		snprintf(cfg->id, len, "%s|-%s", id_base, hostname);
 		if(strlen(cfg->id) > MOSQ_MQTT_ID_MAX_LENGTH){
 			/* Enforce maximum client id length of 23 characters */
 			cfg->id[MOSQ_MQTT_ID_MAX_LENGTH] = '\0';
 		}
+		printf("is cfg->id:%s\n", cfg->id);
 	}
 	return MOSQ_ERR_SUCCESS;
 }
@@ -985,6 +1023,8 @@ int client_connect(struct mosquitto *mosq, struct mosq_config *cfg)
 #endif
 	int rc;
 	int port;
+
+	printf("%s 1", __func__);
 
 	if(cfg->port < 0){
 #ifdef WITH_TLS
@@ -1005,11 +1045,28 @@ int client_connect(struct mosquitto *mosq, struct mosq_config *cfg)
 
 #ifdef WITH_SRV
 	if(cfg->use_srv){
+		printf("mosquitto_connect_srv cfg->host:%s cfg->keepalive:%d cfg->bind_address:%s\n"
+			, cfg->host
+			, cfg->keepalive
+			, cfg->bind_address
+		); 
 		rc = mosquitto_connect_srv(mosq, cfg->host, cfg->keepalive, cfg->bind_address);
 	}else{
+		printf("mosquitto_connect_bind 1 cfg->host:%s cfg->keepalive:%d cfg->bind_address:%s port:%d\n"
+			, cfg->host
+			, cfg->keepalive
+			, cfg->bind_address
+			, port
+		);
 		rc = mosquitto_connect_bind(mosq, cfg->host, port, cfg->keepalive, cfg->bind_address);
 	}
 #else
+	printf("mosquitto_connect_bind 2 cfg->host:%s cfg->keepalive:%d cfg->bind_address:%s port:%d\n"
+		, cfg->host
+		, cfg->keepalive
+		, cfg->bind_address
+		, port
+	);
 	rc = mosquitto_connect_bind(mosq, cfg->host, port, cfg->keepalive, cfg->bind_address);
 #endif
 	if(rc>0){
