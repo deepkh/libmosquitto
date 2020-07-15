@@ -23,7 +23,7 @@ LIBMOSQUITTO_CLEAN: ${LIBMOSQUITTO_DLL_CLEAN}
 # due to lib and src use same code directly, so need to clean lib before make src
 ${LIBMOSQUITTO_DLL}:
 	$(CD) ${LIBMOSQUITTO} && $(MAKE) -f Makefile.${LIBMOSQUITTO_NAME} ${LIBMOSQUITTO_DLL_CLEAN}
-	$(CD) ${LIBMOSQUITTO} && $(MAKE) -f Makefile.${LIBMOSQUITTO_NAME} -j8 $@
+	$(CD) ${LIBMOSQUITTO} && $(MAKE) -f Makefile.${LIBMOSQUITTO_NAME} $@
 
 LIBMOSQUITTO_DEV: 
 	$(CD) ${LIBMOSQUITTO} && $(MAKE) -f Makefile.${LIBMOSQUITTO_NAME} ${LIBMOSQUITTO_DLL}
