@@ -15,11 +15,11 @@
 SHELL=/bin/sh
 
 LIBMOSQUITTO_ALL:
-ifneq (, $(LIBMOSQUITTO_PHONY))
-	@$(CD) ${LIBMOSQUITTO} && $(MAKE) -f Makefile.inc $(LIBMOSQUITTO_PHONY)
-endif
 ifneq (, $(BINMOSQUITTO_PHONY))
 	@$(CD) ${BINMOSQUITTO} && $(MAKE) -f Makefile.inc $(BINMOSQUITTO_PHONY)
+endif
+ifneq (, $(LIBMOSQUITTO_PHONY))
+	@$(CD) ${LIBMOSQUITTO} && $(MAKE) -f Makefile.inc $(LIBMOSQUITTO_PHONY)
 endif
 ifneq (, $(BINMOSQUITTO_PASSWD_PHONY))
 	@$(CD) ${BINMOSQUITTO_PASSWD} && $(MAKE) -f Makefile.inc $(BINMOSQUITTO_PASSWD_PHONY)

@@ -23,10 +23,7 @@ BINMOSQUITTO_CLEAN: ${BINMOSQUITTO_BIN_CLEAN}
 
 # due to lib and src use same code directly, so need to clean lib before make src
 ${BINMOSQUITTO_BIN}:
-	$(CD) ${BINMOSQUITTO} && $(MAKE) -f Makefile.${BINMOSQUITTO_NAME} ${BINMOSQUITTO_BIN_CLEAN}
-	# Someworkaround to build ../lib/memory_mosq.o with -DWITH_BROKER
-	$(RM) ${BINMOSQUITTO_OBJS_DIR}/../lib/memory_mosq.o
-	$(CD) ${BINMOSQUITTO} && $(MAKE) -f Makefile.${BINMOSQUITTO_NAME} -j8 $@
+	$(CD) ${BINMOSQUITTO} && $(MAKE) -f Makefile.${BINMOSQUITTO_NAME} $@
 
 BINMOSQUITTO_DEV: 
 	$(CD) ${BINMOSQUITTO} && $(MAKE) -f Makefile.${BINMOSQUITTO_NAME} -j8 ${BINMOSQUITTO_BIN}
